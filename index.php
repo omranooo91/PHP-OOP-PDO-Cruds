@@ -13,22 +13,21 @@ if (isset($_POST['submit'])) {
     $tax     = filter_input(INPUT_POST, 'tax', FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION);
     $salary  = filter_input(INPUT_POST, 'salary', FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION);
 
-    $user = new User();
-    $user->name = $name;
-    $user->age = $age;
-    $user->address = $address;
-    $user->tax = $tax;
-    $user->salary = $salary;
+    $user = new User($name, $age, $address, $tax, $salary);
 
-    $sqlInsert = 'INSERT INTO users SET name = " ' .  $name . ' ",
-                                        age =  ' .  $age . ' ,
-                                        address =  "' .  $address . '" ,
-                                        tax =  ' .  $tax . ' ,
-                                        salary =  ' .  $salary . ' 
- ';
+    $sqlInsert = 'INSERT INTO users SET name = :name, age = :age, address = :address, tax = :tax, salary = :salary';
+    $stmtInsert = $connection->prepare($sqlInsert);
 
+    if ($stmtInsert->execute(
+        array(
+            ':name'      => $name,
+            ':age'      => $age,
+            ':address'  => $address,
+            ':tax'      => $tax,
+            ':salary'   => $salary,
 
-    if ($connection->exec($sqlInsert)) {
+        )))
+    {
         $message = 'Great.. ' . $name . ' Is successfully Inserted';
     }
 }
@@ -37,7 +36,7 @@ if (isset($_POST['submit'])) {
 //Reading Information from database
 $sqlRead = 'SELECT * FROM users';
 $statment = $connection->query($sqlRead);
-$result = $statment->fetchAll(PDO::FETCH_CLASS,'User');
+$result = $statment->fetchAll(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, 'User', array('name', 'age', 'address', 'tax', 'salary'));
 $result = (is_array($result) && !empty($result)) ? $result : false;
 
 ?>
