@@ -8,7 +8,7 @@ class User
     private $address;
     private $tax;
     private $salary;
-     
+
 
     public function __construct($name, $age, $address, $tax, $salary)
     {

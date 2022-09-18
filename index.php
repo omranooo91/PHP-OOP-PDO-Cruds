@@ -1,10 +1,29 @@
 <?php
+session_start();
 require_once 'db.php';
 require_once 'user.php';
 
+
+// Get id From url for edit form
+if(isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])){
+    $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+
+    if($id > 0){
+        $sqlInsert = 'SELECT * FROM users WHERE  id = :id';
+        $result = $connection->prepare($sqlInsert);
+        $user = $result->execute(array(':id' => $id));
+        if($user === true){
+          $user =  $result->fetchAll(PDO::FETCH_CLASS | PDO::FETCH_PROPS_LATE, 'User', array('name', 'age', 'address', 'tax', 'salary'));
+          $user = array_shift($user);
+          $_SESSION['user'] = $user;
+          $_SESSION['id'] = $id;
+        }
+    }
+}
+
 $message = 'Welcom to PDO Course';
 
-//Insert Information To Database
+//Insert || Update Information To Database
 if (isset($_POST['submit'])) {
 
     $name    = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
@@ -13,22 +32,31 @@ if (isset($_POST['submit'])) {
     $tax     = filter_input(INPUT_POST, 'tax', FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION);
     $salary  = filter_input(INPUT_POST, 'salary', FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION);
 
-    $user = new User($name, $age, $address, $tax, $salary);
+    $params = array(
+        ':name'      => $name,
+        ':age'      => $age,
+        ':address'  => $address,
+        ':tax'      => $tax,
+        ':salary'   => $salary
 
-    $sqlInsert = 'INSERT INTO users SET name = :name, age = :age, address = :address, tax = :tax, salary = :salary';
+
+    );
+
+
+    if(isset($_SESSION['user'])){
+        $sqlInsert = 'UPDATE users SET name = :name, age = :age, address = :address, tax = :tax, salary = :salary WHERE  id = :id';
+        $params[':id'] = $_SESSION['id'];
+    }else{
+        $sqlInsert = 'INSERT INTO users SET name = :name, age = :age, address = :address, tax = :tax, salary = :salary';
+    }
+
     $stmtInsert = $connection->prepare($sqlInsert);
 
-    if ($stmtInsert->execute(
-        array(
-            ':name'      => $name,
-            ':age'      => $age,
-            ':address'  => $address,
-            ':tax'      => $tax,
-            ':salary'   => $salary,
-
-        )))
+    if ($stmtInsert->execute($params) === true)
     {
-        $message = 'Great.. ' . $name . ' Is successfully Inserted';
+        $message = 'Great.. ' . $name . ' Is successfully Saved';
+        session_unset();
+        session_destroy();
     }
 }
 
@@ -48,6 +76,7 @@ $result = (is_array($result) && !empty($result)) ? $result : false;
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -58,14 +87,14 @@ $result = (is_array($result) && !empty($result)) ? $result : false;
 
         <div>
             <form action="<?= $_SERVER['PHP_SELF'] ?>" method="POST">
-                <input type="text" name="name" placeholder="Your name..">
-                <input type="number" name="age" placeholder="Your age..">
-                <input type="text" name="address" placeholder="Your address..">
-                <input type="number" step="0.01" min="1" max="10" name="tax" placeholder="Your tax..">
-                <input type="number" min="4000" max="10000" name="salary" placeholder="salary">
+                <input type="text" name="name" placeholder="Your name.." value="<?= isset($user) ? $user->name : ''; ?>">
+                <input type="number" name="age" placeholder="Your age.." value="<?= isset($user) ? $user->age : ''; ?>">
+                <input type="text" name="address" placeholder="Your address.."  value="<?= isset($user) ? $user->address : ''; ?>">
+                <input type="number" step="0.01" min="1" max="10" name="tax" placeholder="Your tax.."  value="<?= isset($user) ? $user->tax : ''; ?>">
+                <input type="number" min="4000" max="10000" name="salary" placeholder="salary"  value="<?= isset($user) ? $user->salary : ''; ?>">
 
 
-                <input type="submit" name="submit" value="Insert">
+                <input type="submit" name="submit" value="<?= isset($user) ? 'Edit' : 'Save'; ?>">
             </form>
 
             <table style="width:100%">
@@ -75,6 +104,7 @@ $result = (is_array($result) && !empty($result)) ? $result : false;
                     <th>address</th>
                     <th>tax</th>
                     <th>salary</th>
+                    <th>control</th>
                 </tr>
                 <?php
                     if(false !== $result){
@@ -85,6 +115,9 @@ $result = (is_array($result) && !empty($result)) ? $result : false;
                                      <td><?= $user->address ?></td>
                                      <td><?= $user->tax ?></td>
                                      <td><?= $user->salaryCalc() ?></td>
+                                     <td>
+                                        <a href="?action=edit&id=<?= $user->id; ?>"> <i class="fa fa-edit"></i> </a>
+                                     </td>
                                 </tr>
                      <?php   }
                     }else{ ?>
