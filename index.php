@@ -20,6 +20,21 @@ if(isset($_GET['action']) && $_GET['action'] == 'edit' && isset($_GET['id'])){
         }
     }
 }
+//delete
+if(isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])){
+    $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+    if($id > 0) {
+        $sqlDelete = 'DELETE FROM users WHERE id = :id';
+        $result = $connection->prepare($sqlDelete);
+        $delteUser = $result->execute(array(':id' => $id));
+        if($delteUser === true){
+            $message = 'User is Deleted';
+            header('Location: http://localhost/php');
+        }
+    }
+
+
+}
 
 $message = 'Welcom to PDO Course';
 
@@ -116,12 +131,13 @@ $result = (is_array($result) && !empty($result)) ? $result : false;
                                      <td><?= $user->tax ?></td>
                                      <td><?= $user->salaryCalc() ?></td>
                                      <td>
-                                        <a href="?action=edit&id=<?= $user->id; ?>"> <i class="fa fa-edit"></i> </a>
+                                         <a href="?action=edit&id=<?= $user->id; ?>"> <i class="fa fa-edit"></i> </a>
+                                         <a href="?action=delete&id=<?= $user->id; ?>" onclick="if (!confirm('Are you sure you want delete <?= $user->name; ?>')) return false;"> <i class="fa fa-trash"></i> </a>
                                      </td>
                                 </tr>
                      <?php   }
                     }else{ ?>
-                        <td colspan="5"> <p>Your Table is Empty now</p> </td>
+                        <td colspan="6"> <p>Your Table is Empty now</p> </td>
                   <?php  }
                 ?>
             </table>

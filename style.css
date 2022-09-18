@@ -30,6 +30,7 @@ div {
     margin: 0 auto;
     display: flex;
     text-align: center;
+
 }
 
 form{
@@ -47,3 +48,7 @@ table, tr, td, th{
     border: 8px solid #45a049;
     border-radius: 20px;
 }
+ .fa{
+     font-size: 24px;
+     color: #a52222;
+ }
